@@ -1,6 +1,5 @@
-import { dasApi } from "@metaplex-foundation/digital-asset-standard-api"
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
-
+import { dasApi } from '@metaplex-foundation/digital-asset-standard-api';
 import { das }  from '@metaplex-foundation/mpl-core-das';
 
 
@@ -12,12 +11,15 @@ const wallet = publicKey('AUtnbwWJQfYZjJ5Mc6go9UancufcAuyqUZzR1jSe4esx');
 
 (async () => {
     const umi = createUmi("https://solana-devnet.rpc.extrnode.com/47b2966e-f6b5-4f8d-9c2e-c48a77f2448b").use(dasApi());
-    const asset = await umi.rpc.getAsset(assetId);
+    umi.rpc.getAsset("test")
+
+    const asset = await das.getAsset(umi, assetId, { skipDerivePlugins: true });
+    das.dasAssetToCoreCollection
 
     console.log("on chain Asset");
     console.log(asset);
 
-    const collection = await umi.rpc.getAsset(collectionId);
+/*     const collection = await umi.rpc.getAsset(collectionId);
 
     console.log("on chain collection");
     console.log(collection);
@@ -28,4 +30,4 @@ const wallet = publicKey('AUtnbwWJQfYZjJ5Mc6go9UancufcAuyqUZzR1jSe4esx');
     })
     console.log("dasAsset")
     console.log(dasAsset)
-  })();
+ */  })();
