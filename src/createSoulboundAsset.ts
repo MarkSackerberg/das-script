@@ -16,44 +16,49 @@ import {
 } from "@metaplex-foundation/mpl-core";
 import { base58 } from "@metaplex-foundation/umi/serializers";
 
-// Define key accounts
+// Define the Oracle account that will control transfer permissions
+// This is an Oracle deployed by Metaplex that always rejects tranferring
 const ORACLE_ACCOUNT = publicKey(
   "GxaWxaQVeaNeFHehFQEDeKR65MnT6Nup81AGwh2EEnuq"
 );
-const DESTINATION_WALLET = publicKey(
-  "AUtnbwWJQfYZjJ5Mc6go9UancufcAuyqUZzR1jSe4esx"
-);
+
+// Define a dummy destination wallet for testing transfer restrictions
+const DESTINATION_WALLET = publicKey("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
 
 (async () => {
-  // Initialize Umi with RPC endpoint
+  // Step 1: Initialize Umi with devnet RPC endpoint
   const umi = createUmi(
-    "https://devnet.helius-rpc.com/?api-key=0aa5bfbe-0077-4414-9d87-02ffa09cc50b"
+    "YOUR ENDPOINT"
   ).use(mplCore());
 
-  // Set up a test wallet and request devnet SOL
+  // Step 2: Create and fund a test wallet
   const walletSigner = generateSigner(umi);
   umi.use(keypairIdentity(walletSigner));
 
-  console.log("Requesting devnet SOL for testing...");
+  console.log("Funding test wallet with devnet SOL...");
   await umi.rpc.airdrop(walletSigner.publicKey, sol(0.1));
 
-  // Create a new collection
-  console.log("\nCreating collection...");
+  // Step 3: Create a new collection to hold our soulbound asset
+  console.log("Creating parent collection...");
   const collectionSigner = generateSigner(umi);
   await createCollection(umi, {
     collection: collectionSigner,
     name: "My Collection",
     uri: "https://example.com/my-collection.json",
   }).sendAndConfirm(umi);
-  await new Promise(resolve => setTimeout(resolve, 15000)); // Wait for airdrop confirmation
+  
+  // Wait for transaction confirmation
+  await new Promise(resolve => setTimeout(resolve, 15000));
 
-  // Fetch the created collection
+  // Fetch and verify the collection was created
   const collection = await fetchCollection(umi, collectionSigner.publicKey);
-  console.log("Collection created:", collectionSigner.publicKey);
+  console.log("Collection created successfully:", collectionSigner.publicKey);
 
-  // Create a soulbound asset
+  // Step 4: Create a soulbound asset within the collection
   console.log("Creating soulbound asset...");
   const assetSigner = generateSigner(umi);
+  
+  // Create the asset with transfer restrictions using an Oracle plugin
   await create(umi, {
     asset: assetSigner,
     collection: collection,
@@ -61,36 +66,43 @@ const DESTINATION_WALLET = publicKey(
     uri: "https://example.com/my-asset.json",
     plugins: [
       {
+        // The Oracle plugin allows us to control transfer permissions
         type: "Oracle",
         resultsOffset: {
           type: "Anchor",
         },
         baseAddress: ORACLE_ACCOUNT,
         lifecycleChecks: {
+          // Configure the Oracle to reject all transfer attempts
           transfer: [CheckResult.CAN_REJECT],
         },
         baseAddressConfig: undefined,
       },
     ],
-  }).sendAndConfirm(umi );
-  await new Promise(resolve => setTimeout(resolve, 15000)); // Wait for airdrop confirmation
+  }).sendAndConfirm(umi);
+  
+  // Wait for transaction confirmation
+  await new Promise(resolve => setTimeout(resolve, 15000));
 
-  // Fetch the created asset
+  // Fetch and verify the asset was created
   const asset = await fetchAssetV1(umi, assetSigner.publicKey);
-  console.log("Soulbound asset created:", assetSigner.publicKey);
+  console.log("Soulbound asset created successfully:", assetSigner.publicKey);
 
-  // Demonstrate that the asset is soulbound by attempting a transfer
+  // Step 5: Demonstrate that the asset is truly soulbound
   console.log(
-    "Attempting to transfer the soulbound asset (this should fail)..."
+    "Testing soulbound property by attempting a transfer (this should fail)..."
   );
+  
+  // Attempt to transfer the asset (this will fail due to Oracle restrictions)
   const transferResponse = await transfer(umi, {
     asset: asset,
-    newOwner: publicKey("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"), // Dummy public key
+    newOwner: DESTINATION_WALLET,
     collection,
   }).sendAndConfirm(umi, { send: { skipPreflight: true } });
 
+  // Log the failed transfer attempt signature
   console.log(
-    "Transfer signature:",
+    "Transfer attempt signature:",
     base58.deserialize(transferResponse.signature)[0]
   );
 })();

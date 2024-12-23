@@ -1,10 +1,26 @@
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+      await createCandyMachine(umi, {
+        candyMachine,
+        collection: publicKey("HKr4oBvnhntYpzTipAEUCutGQLiCbvmV1d4aikidNndN"), //collectionAddress.publicKey,
+        collectionUpdateAuthority: umi.identity,
+        itemsAvailable: 9,
+        configLineSettings: some({
+          prefixName: "Degen #",
+          nameLength: 8,
+          prefixUri: "https://arweave.net/",
+          uriLength: 43,
+          isSequential: false,
+        }),
+      })
+    );
+
+    import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { mplCore } from "@metaplex-foundation/mpl-core";
 import {
   generateSigner,
   keypairIdentity,
   publicKey,
   sol,
+  some,
 } from "@metaplex-foundation/umi";
 import {
   createCollection,
@@ -14,6 +30,7 @@ import {
   fetchAssetV1,
 } from "@metaplex-foundation/mpl-core";
 import { base58 } from "@metaplex-foundation/umi/serializers";
+import { createCandyMachine } from "@metaplex-foundation/mpl-core-candy-machine";
 
 // Define a dummy destination wallet for testing transfer restrictions
 const DESTINATION_WALLET = publicKey("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
@@ -47,48 +64,32 @@ const DESTINATION_WALLET = publicKey("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX
   const collection = await fetchCollection(umi, collectionSigner.publicKey);
   console.log("Collection created successfully:", collectionSigner.publicKey);
 
-  // Step 4: Create a frozen asset within the collection
-  console.log("Creating frozen asset...");
-  const assetSigner = generateSigner(umi);
+  const revealData = [
+    { name: 'Nft #1', uri: 'http://example.com/1.json' },
+    { name: 'Nft #2', uri: 'http://example.com/2.json' },
+    { name: 'Nft #3', uri: 'http://example.com/3.json' },
+  ]
   
-  // Create the asset with permanent freeze using the PermanentFreezeDelegate plugin
-  await create(umi, {
-    asset: assetSigner,
-    collection: collection,
-    name: "My Frozen Asset",
-    uri: "https://example.com/my-asset.json",
-    plugins: [
-      {
-        // The PermanentFreezeDelegate plugin permanently freezes the asset
-        type: 'PermanentFreezeDelegate',
-        frozen: true, // Set the asset as frozen
-        authority: { type: "None" }, // No authority can unfreeze it
-      },
-    ],
-  }).sendAndConfirm(umi);
-  
-  // Wait for transaction confirmation
-  await new Promise(resolve => setTimeout(resolve, 15000));
+  const string = JSON.stringify(revealData)
+  const hash = crypto.createHash('sha256').update(string).digest()
 
-  // Fetch and verify the asset was created
-  const asset = await fetchAssetV1(umi, assetSigner.publicKey);
-  console.log("Frozen asset created successfully:", assetSigner.publicKey);
-
-  // Step 5: Demonstrate that the asset is truly frozen
-  console.log(
-    "Testing frozen property by attempting a transfer (this should fail)..."
-  );
+  const candyMachine = generateSigner(umi);
   
-  // Attempt to transfer the asset (this will fail due to freeze)
-  const transferResponse = await transfer(umi, {
-    asset: asset,
-    newOwner: DESTINATION_WALLET,
-    collection,
-  }).sendAndConfirm(umi, { send: { skipPreflight: true } });
+  const createResponse = await (await createCandyMachine(umi, {
+    candyMachine,
+    collection: publicKey("HKr4oBvnhntYpzTipAEUCutGQLiCbvmV1d4aikidNndN"), //collectionAddress.publicKey,
+    collectionUpdateAuthority: umi.identity,
+    itemsAvailable: 9,
+    hiddenSettings: {
+      name: "Hidden Asset",
+      uri: "https://example.com/hidden-asset.json",
+      hash,
+    }
+  })).sendAndConfirm(umi);
 
   // Log the failed transfer attempt signature
   console.log(
     "Transfer attempt signature:",
-    base58.deserialize(transferResponse.signature)[0]
+    base58.deserialize(createResponse.signature)[0]
   );
 })();
