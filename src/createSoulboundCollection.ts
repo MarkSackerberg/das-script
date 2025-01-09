@@ -15,6 +15,8 @@ import {
   fetchAssetV1,
 } from "@metaplex-foundation/mpl-core";
 import { base58 } from "@metaplex-foundation/umi/serializers";
+import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { initializeWallet } from "./util/initializeWallet";
 
 // Define the Oracle account that will control transfer permissions
 // This is an Oracle deployed by Metaplex that always rejects transferring
@@ -26,17 +28,16 @@ const ORACLE_ACCOUNT = publicKey(
 const DESTINATION_WALLET = publicKey("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
 
 (async () => {
-  // Step 1: Initialize Umi with devnet RPC endpoint
-  const umi = createUmi(
-    "YOUR ENDPOINT"
-  ).use(mplCore());
+  const useFileSystem = process.argv[2] === "--use-fs-wallet";
+  const rpcEndpoints = getRpcEndpoints();
 
-  // Step 2: Create and fund a test wallet
-  const walletSigner = generateSigner(umi);
-  umi.use(keypairIdentity(walletSigner));
+  // Step 1: Initialize Umi with first RPC endpoint from the list
+  const umi = createUmi(rpcEndpoints[0])
+    .use(mplCore())
 
-  console.log("Funding test wallet with devnet SOL...");
-  await umi.rpc.airdrop(walletSigner.publicKey, sol(0.1));
+  // Initialize wallet based on parameter
+  const wallet = await initializeWallet(umi, useFileSystem);
+  umi.use(keypairIdentity(wallet)); 
   
   // Wait for airdrop confirmation
   await new Promise(resolve => setTimeout(resolve, 15000));

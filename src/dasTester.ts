@@ -1,3 +1,7 @@
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
 const collectionPub = publicKey("7kNL9B6vb1PUZkrkh3jbJtfRFrVYGUQfzS2D7X5CRMWj");
 const assetId = publicKey("7RebhXKU59nmcsKSVNbcKp7CkApDd4FN9o7Q6RK2zHeH");
 
@@ -6,6 +10,7 @@ import { dasApi } from "@metaplex-foundation/digital-asset-standard-api";
 import { getAssetWithProof, mplBubblegum } from "@metaplex-foundation/mpl-bubblegum";
 
 import { publicKey } from "@metaplex-foundation/umi";
+import { getRpcEndpoints } from './util/getRpcEndpoints';
 
 
 async function getAssetWithProofFromUrl(url: string) {
@@ -16,19 +21,8 @@ async function getAssetWithProofFromUrl(url: string) {
   return assetWithProof;
 }
 
-interface RpcEndpoints {
-  [key: string]: string;
-}
 
-const rpcEndpoints: RpcEndpoints = {
-  extrnode:
-    "https://solana-devnet.rpc.extrnode.com/47b2966e-f6b5-4f8d-9c2e-c48a77f2448b",
-  aura: "https://aura-devnet.metaplex.com/",
-  helius:
-    "https://devnet.helius-rpc.com/?api-key=0aa5bfbe-0077-4414-9d87-02ffa09cc50b",
-  quicknode:
-    "https://alpha-damp-seed.solana-devnet.quiknode.pro/ad2b85ef8308cc664df6754f60c65e3d0819b74d",
-};
+const rpcEndpoints = getRpcEndpoints();
 
 (async () => {
   const results = new Map<string, any>();

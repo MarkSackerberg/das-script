@@ -25,6 +25,8 @@ import {
   findAssociatedTokenPda,
   setComputeUnitLimit,
 } from "@metaplex-foundation/mpl-toolbox";
+import { initializeWallet } from "./util/initializeWallet";
+import { getRpcEndpoints } from "./util/getRpcEndpoints";
 
 /**
  * This script demonstrates how to create a Candy Machine with a mint limit guard
@@ -33,26 +35,24 @@ import {
 
 // Configuration
 const RECIPIENT_ADDRESS = "Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV";
-const RPC_ENDPOINT = "ENDPOINT";
 
 (async () => {
   try {
-    // --- Setup ---
-    
-    // Initialize connection to Solana
-    const umi = createUmi(RPC_ENDPOINT).use(mplCandyMachine());
+    // Get wallet type from command line argument
+    const useFileSystem = process.argv[2] === "--use-fs-wallet";
+    const rpcEndpoints = getRpcEndpoints();
+
+    // Step 1: Initialize Umi with first RPC endpoint from the list
+    const umi = createUmi(rpcEndpoints[0]).use(mplCandyMachine());
+
+    // Step 2: Initialize wallet based on parameter
+    const wallet = await initializeWallet(umi, useFileSystem);
+    umi.use(keypairIdentity(wallet));
+
     const recipient = publicKey(RECIPIENT_ADDRESS);
 
-    // Create and fund a test wallet
-    const walletSigner = generateSigner(umi);
-    umi.use(keypairIdentity(walletSigner));
-    console.log("Funding test wallet with devnet SOL...");
-    await umi.rpc.airdrop(walletSigner.publicKey, sol(0.1), {
-      commitment: "finalized",
-    });
-
     // --- Create Collection NFT ---
-    
+
     const collectionMint = generateSigner(umi);
     console.log("Creating collection NFT...");
     console.log("Collection Address:", collectionMint.publicKey);
@@ -67,13 +67,16 @@ const RPC_ENDPOINT = "ENDPOINT";
     }).sendAndConfirm(umi, {
       confirm: { commitment: "finalized" },
     });
-    console.log("Collection Created:", base58.deserialize(createNftTx.signature)[0]);
+    console.log(
+      "Collection Created:",
+      base58.deserialize(createNftTx.signature)[0]
+    );
 
     // --- Create Candy Machine ---
 
     console.log("Creating Candy Machine with mint limit guard...");
     const candyMachine = generateSigner(umi);
-    
+
     const createCandyMachineV2Tx = await (
       await create(umi, {
         candyMachine,
@@ -115,15 +118,21 @@ const RPC_ENDPOINT = "ENDPOINT";
         })
       )
       .sendAndConfirm(umi, { confirm: { commitment: "finalized" } });
-      
-    console.log("Candy Machine Created:", base58.deserialize(createCandyMachineV2Tx.signature)[0]);
+
+    console.log(
+      "Candy Machine Created:",
+      base58.deserialize(createCandyMachineV2Tx.signature)[0]
+    );
 
     // --- Mint NFT ---
 
     console.log("Minting NFT to recipient...");
-    
+
     // Get latest Candy Machine state
-    const candyMachineAccount = await fetchCandyMachine(umi, candyMachine.publicKey);
+    const candyMachineAccount = await fetchCandyMachine(
+      umi,
+      candyMachine.publicKey
+    );
 
     // Create mint transaction
     const nftMint = generateSigner(umi);
@@ -156,7 +165,6 @@ const RPC_ENDPOINT = "ENDPOINT";
 
     console.log("NFT Minted Successfully!");
     console.log("Mint Transaction:", base58.deserialize(mintTx.signature)[0]);
-
   } catch (error) {
     console.error("Failed to execute:", error);
   }

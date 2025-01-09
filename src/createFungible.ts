@@ -4,33 +4,28 @@ import {
   mplTokenMetadata,
   TokenStandard,
 } from "@metaplex-foundation/mpl-token-metadata";
-import { readFileSync } from "fs";
 import {
   generateSigner,
   keypairIdentity,
   percentAmount,
 } from "@metaplex-foundation/umi";
-import {
-  mplToolbox,
-} from "@metaplex-foundation/mpl-toolbox";
+import { mplToolbox } from "@metaplex-foundation/mpl-toolbox";
+import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { initializeWallet } from "./util/initializeWallet";
 
 (async () => {
-  const umi = createUmi(
-    "https://solana-devnet.rpc.extrnode.com/47b2966e-f6b5-4f8d-9c2e-c48a77f2448b"
-  )
+  // Get wallet type from command line argument
+  const useFileSystem = process.argv[2] === "--use-fs-wallet";
+  const rpcEndpoints = getRpcEndpoints();
+
+  // Step 1: Initialize Umi with first RPC endpoint from the list
+  const umi = createUmi(rpcEndpoints[0])
     .use(mplToolbox())
     .use(mplTokenMetadata());
 
-  const wallet =
-    "/home/simon/solana/Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV.json";
-  const secretKey = JSON.parse(readFileSync(wallet, "utf-8"));
-
-  // Create a keypair from your private key
-  const keypair = umi.eddsa.createKeypairFromSecretKey(
-    new Uint8Array(secretKey)
-  );
-
-  umi.use(keypairIdentity(keypair));
+  // Step 2: Initialize wallet based on parameter
+  const wallet = await initializeWallet(umi, useFileSystem);
+  umi.use(keypairIdentity(wallet)); // Wait for airdrop confirmation
 
   const mint3 = generateSigner(umi);
   await createV1(umi, {

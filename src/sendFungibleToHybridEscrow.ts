@@ -12,28 +12,30 @@ import {
   MPL_HYBRID_PROGRAM_ID,
   mplHybrid,
 } from "@metaplex-foundation/mpl-hybrid";
-import { readFileSync } from "fs";
 import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
   string,
   publicKey as publicKeySerializer,
 } from "@metaplex-foundation/umi/serializers";
+import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { initializeWallet } from "./util/initializeWallet";
 
 (async () => {
   const collection = publicKey("<COLLECTION>"); // The collection we are swapping to/from
   const token = publicKey("<TOKEN MINT>"); // The token we are swapping to/from
 
-  const umi = createUmi("<ENDPOINT>").use(mplHybrid()).use(mplTokenMetadata());
+  const useFileSystem = process.argv[2] === "--use-fs-wallet";
+  const rpcEndpoints = getRpcEndpoints();
 
-  const wallet = "<path to wallet>"; // The path to your filesystem Wallet
-  const secretKey = JSON.parse(readFileSync(wallet, "utf-8"));
+  // Step 1: Initialize Umi with first RPC endpoint from the list
+  const umi = createUmi(rpcEndpoints[0])
+    .use(mplHybrid())
+    .use(mplTokenMetadata());
 
-  // Create a keypair from your private key
-  const keypair = umi.eddsa.createKeypairFromSecretKey(
-    new Uint8Array(secretKey)
-  );
-  umi.use(keypairIdentity(keypair));
+  // Initialize wallet based on parameter
+  const wallet = await initializeWallet(umi, useFileSystem);
+  umi.use(keypairIdentity(wallet)); 
 
   // Derive the Escrow
   const escrow = umi.eddsa.findPda(MPL_HYBRID_PROGRAM_ID, [

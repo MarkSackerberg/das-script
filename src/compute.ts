@@ -15,6 +15,8 @@ import {
   mplToolbox,
 } from "@metaplex-foundation/mpl-toolbox";
 import { base58, base64 } from "@metaplex-foundation/umi/serializers";
+import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { initializeWallet } from "./util/initializeWallet";
 
 /**
  * Calculates the optimal priority fee based on recent transactions
@@ -124,18 +126,16 @@ export const getRequiredCU = async (
  * This example shows a complete flow of creating and optimizing a Solana transaction
  */
 const example = async () => {
-  // Step 1: Initialize Umi with your RPC endpoint
-  const umi = createUmi("https://devnet.helius-rpc.com/?api-key=0aa5bfbe-0077-4414-9d87-02ffa09cc50b").use(mplToolbox());
-  
-  // Step 2: Set up a test wallet
-  const signer = generateSigner(umi);
-  umi.use(keypairIdentity(signer));
-  
-  // Step 3: Fund the wallet (devnet only)
-  console.log("Requesting airdrop for testing...");
-  await umi.rpc.airdrop(signer.publicKey, sol(0.001));
-  await new Promise(resolve => setTimeout(resolve, 15000)); // Wait for airdrop confirmation
-  
+  // Get wallet type from command line argument
+  const useFileSystem = process.argv[2] === "--use-fs-wallet";
+  const rpcEndpoints = getRpcEndpoints();
+
+  // Step 1: Initialize Umi with first RPC endpoint from the list
+  const umi = createUmi(rpcEndpoints[0]).use(mplToolbox());
+
+  // Step 2: Initialize wallet based on parameter
+  const wallet = await initializeWallet(umi, useFileSystem);
+  umi.use(keypairIdentity(wallet));  
   // Step 4: Set up the basic transfer parameters
   const destination = publicKey("BeeryDvghgcKPTUw3N3bdFDFFWhTWdWHnsLuVebgsGSD");
   const transferAmount = sol(0.00001); // 0.00001 SOL
@@ -143,7 +143,7 @@ const example = async () => {
   // Step 5: Create the base transaction
   console.log("Creating base transfer transaction...");
   const baseTransaction = await transferSol(umi, {
-    source: signer,
+    source: umi.identity,
     destination,
     amount: transferAmount,
   }).setLatestBlockhash(umi);

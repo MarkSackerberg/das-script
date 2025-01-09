@@ -1,3 +1,5 @@
+import express, { Express } from 'express';
+
 import {
   addConfigLines,
   create,
@@ -6,13 +8,9 @@ import {
 } from "@metaplex-foundation/mpl-candy-machine";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
-  createNoopSigner,
-  createSignerFromKeypair,
   generateSigner,
   keypairIdentity,
   percentAmount,
-  publicKey,
-  signerIdentity,
   some,
   transactionBuilder,
 } from "@metaplex-foundation/umi";
@@ -23,23 +21,29 @@ import {
 import { base58 } from "@metaplex-foundation/umi-serializers";
 import {
   createMintWithAssociatedToken,
-  findAssociatedTokenPda,
   setComputeUnitLimit,
 } from "@metaplex-foundation/mpl-toolbox";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
-import { initializeWallet } from "./util/initializeWallet";
+import { initializeWallet } from './util/initializeWallet';
+import { getRpcEndpoints } from './util/getRpcEndpoints';
+
+const app: Express = express();
+const port = process.env.PORT || 3005; //Save the port number where your server will be listening
+
+app.listen(port, function () {
+  console.log("Server is running!");
 
 (async () => {
   try {
-    const useFileSystem = process.argv[2] === "--use-fs-wallet";
-    const rpcEndpoints = getRpcEndpoints();
+  const useFileSystem = process.argv[2] === "--use-fs-wallet";
+  const rpcEndpoints = getRpcEndpoints();
 
-    // Step 1: Initialize Umi with first RPC endpoint from the list
-    const umi = createUmi(rpcEndpoints[0]).use(mplCandyMachine());
+  // Step 1: Initialize Umi with first RPC endpoint from the list
+  const umi = createUmi(rpcEndpoints[0])
+    .use(mplCandyMachine());
 
-    // Initialize wallet based on parameter
-    const wallet = await initializeWallet(umi, useFileSystem);
-    umi.use(keypairIdentity(wallet));
+  // Initialize wallet based on parameter
+  const wallet = await initializeWallet(umi, useFileSystem);
+  umi.use(keypairIdentity(wallet)); 
 
     const collectionMint = generateSigner(umi);
     console.log("Collection", collectionMint.publicKey);
@@ -54,6 +58,9 @@ import { initializeWallet } from "./util/initializeWallet";
     }).sendAndConfirm(umi, {
       confirm: {
         commitment: "finalized",
+      },
+      send: {
+        skipPreflight: true,
       },
     });
 
@@ -76,12 +83,6 @@ import { initializeWallet } from "./util/initializeWallet";
           percentageShare: 100,
         },
       ],
-      guards: {
-        mintLimit: some({
-          id: 1,
-          limit: 2,
-        }),
-      },
       configLineSettings: some({
         prefixName: "",
         nameLength: 32,
@@ -93,6 +94,9 @@ import { initializeWallet } from "./util/initializeWallet";
     const txSigCm = await txCm.sendAndConfirm(umi, {
       confirm: {
         commitment: "finalized",
+      },
+      send: {
+        skipPreflight: true,
       },
     });
     console.log("CM Tx", base58.deserialize(txSigCm.signature));
@@ -108,25 +112,26 @@ import { initializeWallet } from "./util/initializeWallet";
       confirm: {
         commitment: "finalized",
       },
+      send: {
+        skipPreflight: true,
+      },
     });
 
     console.log("Insert items Tx", base58.deserialize(insertTx.signature));
 
-    const recipient = publicKey("Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV");
     const nftMint = generateSigner(umi);
     const mintTx = await transactionBuilder()
       .add(setComputeUnitLimit(umi, { units: 800_000 }))
       .add(
-        createMintWithAssociatedToken(umi, { mint: nftMint, owner: recipient })
+        createMintWithAssociatedToken(umi, {
+          mint: nftMint,
+          owner: umi.identity.publicKey,
+        })
       )
       .add(
         mintV2(umi, {
           candyMachine: candyMachine.publicKey,
           nftMint,
-          token: findAssociatedTokenPda(umi, {
-            mint: nftMint.publicKey,
-            owner: recipient,
-          }),
           collectionMint: collectionMint.publicKey,
           collectionUpdateAuthority: umi.identity.publicKey,
           tokenStandard: TokenStandard.NonFungible,
@@ -141,6 +146,9 @@ import { initializeWallet } from "./util/initializeWallet";
         confirm: {
           commitment: "finalized",
         },
+        send: {
+          skipPreflight: true,
+        },
       });
 
     console.log("NFT Mint", nftMint.publicKey);
@@ -149,3 +157,4 @@ import { initializeWallet } from "./util/initializeWallet";
     console.log(e);
   }
 })();
+})

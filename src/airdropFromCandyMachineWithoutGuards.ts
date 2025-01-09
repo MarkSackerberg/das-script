@@ -24,6 +24,8 @@ import {
   createMintWithAssociatedToken,
   setComputeUnitLimit,
 } from "@metaplex-foundation/mpl-toolbox";
+import { initializeWallet } from "./util/initializeWallet";
+import { getRpcEndpoints } from "./util/getRpcEndpoints";
 
 /**
  * This script demonstrates how to create a basic Candy Machine without guards
@@ -32,23 +34,21 @@ import {
 
 // Configuration
 const RECIPIENT_ADDRESS = "Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV";
-const RPC_ENDPOINT = "https://devnet.helius-rpc.com/?api-key=0aa5bfbe-0077-4414-9d87-02ffa09cc50b";
 
 (async () => {
   try {
-    // --- Setup ---
-    
-    // Initialize connection to Solana
-    const umi = createUmi(RPC_ENDPOINT).use(mplCandyMachine());
-    const recipient = publicKey(RECIPIENT_ADDRESS);
+    // Get wallet type from command line argument
+    const useFileSystem = process.argv[2] === "--use-fs-wallet";
+    const rpcEndpoints = getRpcEndpoints();
 
-    // Create and fund a test wallet
-    const walletSigner = generateSigner(umi);
-    umi.use(keypairIdentity(walletSigner));
-    console.log("Funding test wallet with devnet SOL...");
-    await umi.rpc.airdrop(walletSigner.publicKey, sol(0.1), {
-      commitment: "finalized",
-    });
+    // Step 1: Initialize Umi with first RPC endpoint from the list
+    const umi = createUmi(rpcEndpoints[0]).use(mplCandyMachine());
+
+    // Step 2: Initialize wallet based on parameter
+    const wallet = await initializeWallet(umi, useFileSystem);
+    umi.use(keypairIdentity(wallet));
+    
+    const recipient = publicKey(RECIPIENT_ADDRESS);
 
     // --- Create Collection NFT ---
     
