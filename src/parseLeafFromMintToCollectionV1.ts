@@ -3,15 +3,15 @@ import {mplBubblegum, parseLeafFromMintToCollectionV1Transaction } from "@metapl
 import { base58 } from "@metaplex-foundation/umi/serializers";
 import { keypairIdentity } from "@metaplex-foundation/umi";
 import { initializeWallet } from "./util/initializeWallet";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 
 
 (async () => {
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  const rpcUrl = getFirstRpcEndpoint();
 
   // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0])
+  const umi = createUmi(rpcUrl)
     .use(mplBubblegum())
 
   // Initialize wallet based on parameter

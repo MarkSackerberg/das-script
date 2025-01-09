@@ -14,17 +14,17 @@ import {
 } from "@metaplex-foundation/mpl-core";
 import { base58 } from "@metaplex-foundation/umi/serializers";
 import { initializeWallet } from "./util/initializeWallet";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 
 
 
 (async () => {
   // Get wallet type from command line argument
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  const rpcUrl = getFirstRpcEndpoint();
 
   // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0]).use(mplCore());
+  const umi = createUmi(rpcUrl).use(mplCore());
 
   // Step 2: Initialize wallet based on parameter
   const wallet = await initializeWallet(umi, useFileSystem);

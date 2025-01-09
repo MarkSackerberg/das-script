@@ -15,7 +15,7 @@ import {
   mplToolbox,
 } from "@metaplex-foundation/mpl-toolbox";
 import { base58, base64 } from "@metaplex-foundation/umi/serializers";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint, getRpcEndpoints } from "./util/getRpcEndpoints";
 import { initializeWallet } from "./util/initializeWallet";
 
 /**
@@ -128,10 +128,10 @@ export const getRequiredCU = async (
 const example = async () => {
   // Get wallet type from command line argument
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  const rpcUrl = getFirstRpcEndpoint();
 
   // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0]).use(mplToolbox());
+  const umi = createUmi(rpcUrl).use(mplToolbox());
 
   // Step 2: Initialize wallet based on parameter
   const wallet = await initializeWallet(umi, useFileSystem);

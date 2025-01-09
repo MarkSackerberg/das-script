@@ -24,7 +24,7 @@ import {
   setComputeUnitLimit,
 } from "@metaplex-foundation/mpl-toolbox";
 import { initializeWallet } from './util/initializeWallet';
-import { getRpcEndpoints } from './util/getRpcEndpoints';
+import { getFirstRpcEndpoint } from './util/getRpcEndpoints';
 
 const app: Express = express();
 const port = process.env.PORT || 3005; //Save the port number where your server will be listening
@@ -35,10 +35,10 @@ app.listen(port, function () {
 (async () => {
   try {
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  const rpcUrl = getFirstRpcEndpoint();
 
   // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0])
+  const umi = createUmi(rpcUrl)
     .use(mplCandyMachine());
 
   // Initialize wallet based on parameter

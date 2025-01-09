@@ -18,7 +18,7 @@ import {
   string,
   publicKey as publicKeySerializer,
 } from "@metaplex-foundation/umi/serializers";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 import { initializeWallet } from "./util/initializeWallet";
 
 (async () => {
@@ -26,10 +26,10 @@ import { initializeWallet } from "./util/initializeWallet";
   const token = publicKey("<TOKEN MINT>"); // The token we are swapping to/from
 
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  const rpcUrl = getFirstRpcEndpoint();
 
   // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0])
+  const umi = createUmi(rpcUrl)
     .use(mplHybrid())
     .use(mplTokenMetadata());
 

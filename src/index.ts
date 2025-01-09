@@ -4,7 +4,7 @@ import { das } from "@metaplex-foundation/mpl-core-das";
 
 import { keypairIdentity, publicKey } from "@metaplex-foundation/umi";
 import { initializeWallet } from "./util/initializeWallet";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 
 const assetId = publicKey("FgEKkVTSfLQ7a7BFuApypy4KaTLh65oeNRn2jZ6fiBav");
 const collectionId = publicKey("FgEKkVTSfLQ7a7BFuApypy4KaTLh65oeNRn2jZ6fiBav");
@@ -12,10 +12,10 @@ const wallet = publicKey("AUtnbwWJQfYZjJ5Mc6go9UancufcAuyqUZzR1jSe4esx");
 
 (async () => {
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  const rpcUrl = getFirstRpcEndpoint();
 
   // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0])
+  const umi = createUmi(rpcUrl)
     .use(dasApi())
 
   // Initialize wallet based on parameter

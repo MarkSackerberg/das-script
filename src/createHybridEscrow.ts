@@ -14,15 +14,17 @@ import {
   base58,
   publicKey as publicKeySerializer,
 } from "@metaplex-foundation/umi/serializers";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 import { initializeWallet } from "./util/initializeWallet";
 
 (async () => {
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  
+  // Replace the old RPC endpoint logic with the new function
+  const rpcUrl = getFirstRpcEndpoint();
 
-  // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0])
+  // Initialize Umi with the selected RPC endpoint
+  const umi = createUmi(rpcUrl)
     .use(mplHybrid())
     .use(mplTokenMetadata());
 
@@ -40,8 +42,8 @@ import { initializeWallet } from "./util/initializeWallet";
   const path = 1; // 0: Update Nft on Swap, 1: Do not update Nft on Swap
 
   // Escrow Accounts - Change these to your needs
-  const collection = publicKey("2awhCfABp9iFC9KuLZqGZvkVFRpAX631XbrPA9A9D9kW"); // The collection we are swapping to/from
-  const token = publicKey("AP2Aj3WFJrZZMJimMNNG9J1oz1yn7itMjg2iRpim9xgK"); // The token we are swapping to/from
+  const collection = publicKey("4FfULFL242qDgNF9nXo2AUdKdntvtNFozE6dEN6pT4rf"); // The collection we are swapping to/from
+  const token = publicKey("HeWdnJqjmmFbs6ACUHuPTR8diasBjNRiyKumFvyypump"); // The token we are swapping to/from
   const feeLocation = publicKey("Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV"); // The address where the fees will be sent
   const escrow = umi.eddsa.findPda(MPL_HYBRID_PROGRAM_ID, [
     string({ size: "variable" }).serialize("escrow"),

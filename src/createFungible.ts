@@ -10,16 +10,16 @@ import {
   percentAmount,
 } from "@metaplex-foundation/umi";
 import { mplToolbox } from "@metaplex-foundation/mpl-toolbox";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 import { initializeWallet } from "./util/initializeWallet";
 
 (async () => {
   // Get wallet type from command line argument
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  const rpcUrl = getFirstRpcEndpoint();
 
   // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0])
+  const umi = createUmi(rpcUrl)
     .use(mplToolbox())
     .use(mplTokenMetadata());
 

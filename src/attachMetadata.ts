@@ -1,33 +1,26 @@
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
   createFungible,
-  createMetadataAccountV3,
   createV1,
-  fetchDigitalAsset,
   mplTokenMetadata,
   TokenStandard,
 } from "@metaplex-foundation/mpl-token-metadata";
-import { readFileSync } from "fs";
 import {
   createAmountFromDecimals,
   generateSigner,
   keypairIdentity,
-  none,
   percentAmount,
   publicKey,
 } from "@metaplex-foundation/umi";
 import {
-  createAssociatedToken,
-  createMint,
   createTokenIfMissing,
   findAssociatedTokenPda,
   getSplAssociatedTokenProgramId,
-  getSplTokenProgramId,
   mintTokensTo,
   mplToolbox,
 } from "@metaplex-foundation/mpl-toolbox";
 import { initializeWallet } from "./util/initializeWallet";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 
 const assetId = publicKey("FgEKkVTSfLQ7a7BFuApypy4KaTLh65oeNRn2jZ6fiBav");
 const collectionId = publicKey("FgEKkVTSfLQ7a7BFuApypy4KaTLh65oeNRn2jZ6fiBav");
@@ -36,10 +29,10 @@ const wallet = publicKey("AUtnbwWJQfYZjJ5Mc6go9UancufcAuyqUZzR1jSe4esx");
 (async () => {
       // Get wallet type from command line argument
       const useFileSystem = process.argv[2] === "--use-fs-wallet";
-      const rpcEndpoints = getRpcEndpoints();
+      const rpcUrl = getFirstRpcEndpoint();
   
       // Step 1: Initialize Umi with first RPC endpoint from the list
-      const umi = createUmi(rpcEndpoints[0]).use(mplToolbox()).use(mplTokenMetadata());
+      const umi = createUmi(rpcUrl).use(mplToolbox()).use(mplTokenMetadata());
   
       // Step 2: Initialize wallet based on parameter
       const wallet = await initializeWallet(umi, useFileSystem);

@@ -26,7 +26,7 @@ import {
   setComputeUnitLimit,
 } from "@metaplex-foundation/mpl-toolbox";
 import { initializeWallet } from "./util/initializeWallet";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 
 /**
  * This script demonstrates how to create a Candy Machine with a mint limit guard
@@ -40,10 +40,10 @@ const RECIPIENT_ADDRESS = "Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV";
   try {
     // Get wallet type from command line argument
     const useFileSystem = process.argv[2] === "--use-fs-wallet";
-    const rpcEndpoints = getRpcEndpoints();
+    const rpcUrl = getFirstRpcEndpoint();
 
     // Step 1: Initialize Umi with first RPC endpoint from the list
-    const umi = createUmi(rpcEndpoints[0]).use(mplCandyMachine());
+    const umi = createUmi(rpcUrl).use(mplCandyMachine());
 
     // Step 2: Initialize wallet based on parameter
     const wallet = await initializeWallet(umi, useFileSystem);

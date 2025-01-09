@@ -14,7 +14,7 @@ import {
   fetchAsset,
   fetchCollection,
 } from "@metaplex-foundation/mpl-core";
-import { getRpcEndpoints } from "./util/getRpcEndpoints";
+import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 import { initializeWallet } from "./util/initializeWallet";
 
 (async () => {
@@ -22,10 +22,10 @@ import { initializeWallet } from "./util/initializeWallet";
   const assetId = publicKey("<NFT MINT>"); // Mint Address of the NFT you want to send
 
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
-  const rpcEndpoints = getRpcEndpoints();
+  const rpcUrl = getFirstRpcEndpoint();
 
   // Step 1: Initialize Umi with first RPC endpoint from the list
-  const umi = createUmi(rpcEndpoints[0])
+  const umi = createUmi(rpcUrl)
     .use(mplHybrid())
     .use(mplTokenMetadata());
 
