@@ -2,6 +2,7 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
   publicKey,
   keypairIdentity,
+  transactionBuilder,
 } from "@metaplex-foundation/umi";
 import {
   mplHybrid,
@@ -16,11 +17,11 @@ import {
 } from "@metaplex-foundation/umi/serializers";
 import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 import { initializeWallet } from "./util/initializeWallet";
+import { setComputeUnitPrice } from "@metaplex-foundation/mpl-toolbox";
 
 (async () => {
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
   
-  // Replace the old RPC endpoint logic with the new function
   const rpcUrl = getFirstRpcEndpoint();
 
   // Initialize Umi with the selected RPC endpoint
@@ -57,7 +58,7 @@ import { initializeWallet } from "./util/initializeWallet";
   const solFeeAmount = addZeros(0, 9); // Additional fee to pay when swapping to NFTs (Sol has 9 decimals)
 
   /// Step 3: Create the Escrow
-  const initEscrowTx = await initEscrowV1(umi, {
+  const initEscrowBuilder = initEscrowV1(umi, {
     name,
     uri,
     max,
@@ -70,9 +71,13 @@ import { initializeWallet } from "./util/initializeWallet";
     amount,
     feeAmount,
     solFeeAmount,
-  }).sendAndConfirm(umi);
+  }).prepend(setComputeUnitPrice(umi, { microLamports: 5000 }));
 
-  const signature = base58.deserialize(initEscrowTx.signature)[0];
+  const blockhash = await umi.rpc.getLatestBlockhash()
+  const builder = transactionBuilder().setBlockhash(blockhash.blockhash).add(initEscrowBuilder)
+  const signedBuilder = await builder.buildAndSign(umi)
+  const tx = await umi.rpc.sendTransaction(signedBuilder, {skipPreflight: true})
+  const signature = base58.deserialize(tx)[0];
   console.log(
     `Escrow ${escrow} created! https://explorer.solana.com/tx/${signature}?cluster=devnet`
   );

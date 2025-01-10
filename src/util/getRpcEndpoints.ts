@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 
-// Load environment variables from .env file
 dotenv.config();
 
 interface RpcEndpoints {
@@ -10,7 +9,7 @@ interface RpcEndpoints {
 export function getRpcEndpoints(mainnet: boolean = false): RpcEndpoints {
   const endpoints: RpcEndpoints = {};
   const networkType = mainnet ? 'mainnet' : 'devnet';
-    
+
   Object.entries(process.env).forEach(([key, value]) => {
     // Look for environment variables ending with _RPC and matching network type
     if (key.endsWith("_RPC") && value && key.toLowerCase().includes(networkType)) {
