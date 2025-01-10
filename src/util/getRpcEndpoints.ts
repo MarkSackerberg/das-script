@@ -7,32 +7,29 @@ interface RpcEndpoints {
   [key: string]: string;
 }
 
-export function getRpcEndpoints(): RpcEndpoints {
+export function getRpcEndpoints(mainnet: boolean = false): RpcEndpoints {
   const endpoints: RpcEndpoints = {};
-
-  // Get all environment variables
-  console.log('Available env variables:', Object.keys(process.env));
-  
+  const networkType = mainnet ? 'mainnet' : 'devnet';
+    
   Object.entries(process.env).forEach(([key, value]) => {
-    // Look for environment variables ending with _RPC
-    if (key.endsWith("_RPC") && value) {
-      // Convert SOMETHING_RPC to something
+    // Look for environment variables ending with _RPC and matching network type
+    if (key.endsWith("_RPC") && value && key.toLowerCase().includes(networkType)) {
+      // Convert SOMETHING_MAINNET_RPC or SOMETHING_DEVNET_RPC to something
       const name = key.slice(0, -4).toLowerCase();
       endpoints[name] = value;
-      console.log(`Added endpoint: ${name} = ${value}`);
     }
   });
 
-  console.log('Final endpoints:', endpoints);
   return endpoints;
 }
 
-export function getFirstRpcEndpoint(): string {
-  const rpcEndpoints = getRpcEndpoints();
+export function getFirstRpcEndpoint(mainnet: boolean = false): string {
+  const rpcEndpoints = getRpcEndpoints(mainnet);
   const rpcUrl = Object.values(rpcEndpoints)[0];
   
   if (!rpcUrl) {
-    throw new Error('No RPC endpoint available');
+    const networkType = mainnet ? 'mainnet' : 'devnet';
+    throw new Error(`No ${networkType} RPC endpoint available`);
   }
   console.log('Using RPC endpoint:', rpcUrl);
 
