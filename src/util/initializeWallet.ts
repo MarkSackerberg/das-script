@@ -7,9 +7,12 @@ export async function initializeWallet(
     useFileSystem: boolean
   ): Promise<KeypairSigner> {
     if (useFileSystem) {
-      const wallet =
-        "/home/simon/solana/Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV.json";
-      const secretKey = JSON.parse(readFileSync(wallet, "utf-8"));
+//      const wallet =
+//        "/home/simon/solana/Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV.json";
+        const wallet =
+        "/home/simon/solana/DAS7Wnf86QNmwKWacTe8KShU7V6iw7wwcPjG9qXLPkEU.json";
+
+        const secretKey = JSON.parse(readFileSync(wallet, "utf-8"));
       const keypair = umi.eddsa.createKeypairFromSecretKey(
         new Uint8Array(secretKey)
       );

@@ -11,14 +11,24 @@ export function getRpcEndpoints(mainnet: boolean = false): RpcEndpoints {
   const networkType = mainnet ? 'mainnet' : 'devnet';
 
   Object.entries(process.env).forEach(([key, value]) => {
-    // Look for environment variables ending with _RPC and matching network type
-    if (key.endsWith("_RPC") && value && key.toLowerCase().includes(networkType)) {
-      // Convert SOMETHING_MAINNET_RPC or SOMETHING_DEVNET_RPC to something
-      const name = key.slice(0, -4).toLowerCase();
-      endpoints[name] = value;
+    // Look for environment variables ending with _RPC
+    if (key.endsWith("_RPC") && value) {
+      // If the key contains network type specification, check if it matches
+      if (key.toLowerCase().includes('mainnet') || key.toLowerCase().includes('devnet')) {
+        if (key.toLowerCase().includes(networkType)) {
+          const name = key.slice(0, -4).toLowerCase();
+          endpoints[name] = value;
+        }
+      } else {
+        // For RPC endpoints without network specification, assume they're for devnet
+        if (!mainnet) {
+          const name = key.slice(0, -4).toLowerCase();
+          endpoints[name] = value;
+        }
+      }
     }
   });
-
+  
   return endpoints;
 }
 

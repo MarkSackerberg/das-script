@@ -7,11 +7,6 @@ import {
 } from "@metaplex-foundation/mpl-bubblegum";
 
 import {
-  setComputeUnitLimit,
-  setComputeUnitPrice,
-} from "@metaplex-foundation/mpl-toolbox";
-
-import {
   createNft,
   mplTokenMetadata,
 } from "@metaplex-foundation/mpl-token-metadata";
@@ -30,6 +25,8 @@ import { base58 } from "@metaplex-foundation/umi/serializers";
 import { initializeWallet } from "./util/initializeWallet";
 import { getFirstRpcEndpoint } from "./util/getRpcEndpoints";
 
+import { dasApi } from '@metaplex-foundation/digital-asset-standard-api';
+
 const createCnft = async () => {
   const useFileSystem = process.argv[2] === "--use-fs-wallet";
 
@@ -37,19 +34,16 @@ const createCnft = async () => {
   const umi = createUmi(rpcUrl)
     .use(mplBubblegum())
     .use(mplTokenMetadata())
-    .use(
-      irysUploader({
-        address: "https://devnet.irys.xyz",
-      })
-    );
+    .use(dasApi())
+    .use(irysUploader({
+      address: "https://devnet.irys.xyz",
+    }))
+
 
   const wallet = await initializeWallet(umi, useFileSystem);
 
   umi.use(keypairIdentity(wallet));
   const merkleTree = generateSigner(umi);
-
-  let tree_builder = new TransactionBuilder();
-  await tree_builder.setLatestBlockhash(umi, { commitment: "finalized" });
 
   console.log("merkleTree", merkleTree);
   console.log(
@@ -58,16 +52,20 @@ const createCnft = async () => {
     "\nStore this address as you will need it later."
   );
 
-  tree_builder.add(
-    await createTree(umi, {
-      merkleTree,
-      maxBufferSize: 8,
-      maxDepth: 3,
-    })
-  );
 
   try {
-    await tree_builder.sendAndConfirm(umi);
+    (await createTree(umi, {
+      merkleTree,
+      maxBufferSize: 8,
+      maxDepth: 5,
+    })).sendAndConfirm(umi, {
+      send: {
+        skipPreflight: true,
+      },
+      confirm: {
+        commitment: "finalized",
+      },
+    });
   } catch (error) {
     if (error instanceof SendTransactionError) {
       console.error("Transaction simulation failed:", error.message);
@@ -80,11 +78,11 @@ const createCnft = async () => {
   const collectionSigner = generateSigner(umi);
   console.log("collectionSigner:", collectionSigner);
 
-  const collectionImageFile = fs.readFileSync("collection.png");
+  const collectionImageFile = fs.readFileSync("src/testAsset/collection.png");
 
   const genericCollectionImageFile = createGenericFile(
     collectionImageFile,
-    "collection.png"
+    "src/testAsset/collection.png"
   );
 
   const collectionImageUri = await umi.uploader.upload([
@@ -94,7 +92,7 @@ const createCnft = async () => {
   const collectionMetadata = {
     name: "My Test cNFT Collection",
     image: collectionImageUri[0],
-    externalUrl: "https://pump-fun-fe-one.vercel.app/",
+    externalUrl: "",
     properties: {
       files: [
         {
@@ -114,20 +112,15 @@ const createCnft = async () => {
 
   console.log("creating nft");
 
-  let collection_builder = new TransactionBuilder();
-  collection_builder = await collection_builder.setLatestBlockhash(umi, { commitment: "finalized" });
 
-  collection_builder = collection_builder.add(
-    createNft(umi, {
+  const collection_builder = 
+    await createNft(umi, {
       mint: collectionSigner,
       name: "My cNFT Collection",
       uri: collectionMetadataUri,
       isCollection: true,
       sellerFeeBasisPoints: percentAmount(0),
-    })
-  );
-
-  await collection_builder.sendAndConfirm(umi, {
+    }).sendAndConfirm(umi, {
     send: {
       skipPreflight: true,
     },
@@ -136,18 +129,19 @@ const createCnft = async () => {
     },
   });
 
+
   console.log("creating nft metadata");
 
-  const nftImageFile = fs.readFileSync("0.png");
+  const nftImageFile = fs.readFileSync("src/testAsset/0.png");
 
-  const genericNftImageFile = createGenericFile(nftImageFile, "0.png");
+  const genericNftImageFile = createGenericFile(nftImageFile, "src/testAsset/0.png");
 
   const nftImageUri = await umi.uploader.upload([genericNftImageFile]);
 
   const nftMetadata = {
     name: "My Test cNFT",
     image: nftImageUri[0],
-    externalUrl: "https://pump-fun-fe-one.vercel.app/",
+    externalUrl: "",
     attributes: [
       {
         trait_type: "trait1",
@@ -172,17 +166,14 @@ const createCnft = async () => {
   const nftMetadataUri = await umi.uploader.uploadJson(nftMetadata);
   console.log("nftMetadataUri:", nftMetadataUri);
 
-  const newOwner = umi.identity.publicKey;
-
   console.log("Minting Compressed NFT to Merkle Tree...");
 
   try {
     let mint_builder = new TransactionBuilder();
-    mint_builder = await mint_builder.setLatestBlockhash(umi, { commitment: "finalized" });
 
     mint_builder = mint_builder.add(
       mintToCollectionV1(umi, {
-        leafOwner: newOwner,
+        leafOwner: umi.identity.publicKey,
         collectionMint: collectionSigner.publicKey,
         merkleTree: merkleTree.publicKey,
         metadata: {
@@ -219,6 +210,10 @@ const createCnft = async () => {
     );
     console.log("Compressed NFT Minted!:", signature);
     console.log("leaf:", leaf);
+
+    //@ts-ignore  
+    const proof = await umi.rpc.getAssetProof(leaf.id)
+    console.log("proof:", proof)
   } catch (error) {
     console.error("Error minting cNFT:", error);
   }
