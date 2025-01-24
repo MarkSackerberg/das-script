@@ -130,41 +130,6 @@ const createCnft = async () => {
   });
 
 
-  console.log("creating nft metadata");
-
-  const nftImageFile = fs.readFileSync("src/testAsset/0.png");
-
-  const genericNftImageFile = createGenericFile(nftImageFile, "src/testAsset/0.png");
-
-  const nftImageUri = await umi.uploader.upload([genericNftImageFile]);
-
-  const nftMetadata = {
-    name: "My Test cNFT",
-    image: nftImageUri[0],
-    externalUrl: "",
-    attributes: [
-      {
-        trait_type: "trait1",
-        value: "value1",
-      },
-      {
-        trait_type: "trait2",
-        value: "value2",
-      },
-    ],
-    properties: {
-      files: [
-        {
-          uri: nftImageUri[0],
-          type: "image/png",
-        },
-      ],
-    },
-  };
-
-  console.log("Uploading cNFT metadata...");
-  const nftMetadataUri = await umi.uploader.uploadJson(nftMetadata);
-  console.log("nftMetadataUri:", nftMetadataUri);
 
   console.log("Minting Compressed NFT to Merkle Tree...");
 
@@ -177,8 +142,8 @@ const createCnft = async () => {
         collectionMint: collectionSigner.publicKey,
         merkleTree: merkleTree.publicKey,
         metadata: {
-          name: "My Test cNFT",
-          uri: nftMetadataUri, // Use the uploaded NFT metadata URI
+          name: "Chiaki Azure 55",
+          uri: "https://arweave.net/c9aGs5fOk7gD4wWnSvmzeqgtfxAGRgtI1jYzvl8-IVs/chiaki-violet-azure-common.json",
           sellerFeeBasisPoints: 500, // 5%
           collection: { key: collectionSigner.publicKey, verified: false },
           creators: [

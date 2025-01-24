@@ -10,7 +10,7 @@ export async function initializeWallet(
 //      const wallet =
 //        "/home/simon/solana/Tes1zkZkXhgTaMFqVgbgvMsVkRJpq4Y6g54SbDBeKVV.json";
         const wallet =
-        "/home/simon/solana/DAS7Wnf86QNmwKWacTe8KShU7V6iw7wwcPjG9qXLPkEU.json";
+        "/home/simon/solana/DASPQfEAVcHp55eFmfstRduMT3dSfoTirFFsMHwUaWaz.json";
 
         const secretKey = JSON.parse(readFileSync(wallet, "utf-8"));
       const keypair = umi.eddsa.createKeypairFromSecretKey(
