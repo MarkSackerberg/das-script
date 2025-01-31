@@ -1,3 +1,5 @@
+import "@metaplex-foundation/digital-asset-standard-api";
+
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
   keypairIdentity,
